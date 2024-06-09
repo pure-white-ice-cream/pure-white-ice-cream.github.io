@@ -31,22 +31,17 @@ sudo systemctl enable docker
 sudo docker version
 ```
 
-## 二、测试是否可用
+## 二、测试是否可用(不安全, 生产环境建议跳过此测试直接看三)
 
 ### 防火墙开放端口 `:2375`
 
-### 修改`/lib/systemd/system/docker.service`配置文件
-
-源文件
+### 创建或修改`/etc/systemd/system/docker.service.d/override.conf`配置文件
 
 ```
-ExecStart=/usr/bin/dockerd -H fd:// --containerd=/run/containerd/containerd.sock
-```
-
-修改后(去掉了` -H fd://`)
-
-```
-ExecStart=/usr/bin/dockerd --containerd=/run/containerd/containerd.sock
+##Add this to the file for the docker daemon to use different ExecStart parameters (more things can be added here)
+[Service]
+ExecStart=
+ExecStart=/usr/bin/dockerd
 ```
 
 ### 添加`/etc/docker/daemon.json`配置文件
@@ -69,9 +64,20 @@ $ sudo systemctl status docker
 
 ## 三、安全地远程连接
 
-### 创建 CA 和证书
+### 防火墙开放端口 `:2375`
 
-这步有很多方法, 网上教程很多, 比如使用这个脚本
+### 创建或修改`/etc/systemd/system/docker.service.d/override.conf`配置文件
+
+```
+##Add this to the file for the docker daemon to use different ExecStart parameters (more things can be added here)
+[Service]
+ExecStart=
+ExecStart=/usr/bin/dockerd
+```
+
+### 创建证书
+
+这步有很多方法, 网上教程很多, 例如 linux 使用以下脚本生成
 
 ```shell
 #!/bin/sh
@@ -138,18 +144,18 @@ chmod -v 0444 ca.pem server-cert.pem cert.pem
 `ca.pem`
 `cert.pem`
 `key.pem`
-在本地端,
+在本地端 IDEA 用(下载到本地),
 
 `ca.pem`
 `server-cert.pem`
 `server-key.pem`
-在服务器端(放到`/etc/docker/tls/`目录下)
+在服务器端 docker 用(放到服务器`/etc/docker/tls/`目录下)
 
 ### 修改`/etc/docker/daemon.json`配置文件
 
 ```json
 {
-  "hosts": ["fd://", "tcp://0.0.0.0:2376"],
+  "hosts": ["fd://", "tcp://0.0.0.0:2375"],
   "tlsverify": true,
   "tlscacert": "/etc/docker/tls/ca.pem",
   "tlscert": "/etc/docker/tls/server-cert.pem",
@@ -157,17 +163,28 @@ chmod -v 0444 ca.pem server-cert.pem cert.pem
 }
 ```
 
+### 重启 docker 服务
+
+```shell
+$ sudo systemctl daemon-reload
+$ sudo systemctl restart docker
+$ sudo systemctl status docker
+```
+
 ### 使用 IDEA 添加 Docker 服务
 
 `ca.pem`
 `cert.pem`
 `key.pem`
-这三个文件放到同一个文件夹里, IDEA 证书选择这个文件夹
+上面说的这三个文件放到同一个文件夹里, IDEA 证书选择这个文件夹
 
 ---
 
 ## 写在结尾
 
-### 除了 Docker 以外, 还可以连接服务器的 ssh 和 sftp, 非常方便
+### 除了 Docker 以外, IDEA 还可以连接服务器的 ssh 和 sftp, 非常方便
 
-### 参考文章: [Docker 客户端连接远程 Docker 服务](https://zhuanlan.zhihu.com/p/94224305)
+### 参考文章
+
+- [Docker 客户端连接远程 Docker 服务](https://zhuanlan.zhihu.com/p/94224305)
+- [Docker 系列-docker 配置远程访问 - 狮子挽歌丿 - 博客园](https://www.cnblogs.com/mrxccc/p/16504718.html)
