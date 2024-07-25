@@ -1,7 +1,7 @@
 # [白色小镇](http://pure-white-ice-cream.github.io)
 
 <p align="center">
-基于<a href="https://hexo.io/" target="_blank"> Hexo</a> & <a href="https://docs.github.com/zh/pages/getting-started-with-github-pages" target="_blank"> Github Pages</a>
+基于 <a href="https://hexo.io/" target="_blank">Hexo</a> & <a href="https://docs.github.com/zh/pages/getting-started-with-github-pages" target="_blank">Github Pages</a>
 </p>
 
 ## 简介
