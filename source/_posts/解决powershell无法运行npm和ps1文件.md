@@ -8,11 +8,11 @@ date: 2025/10/22 11:00:00
 `powershell` 执行 `npm` 或 `xxx.ps1`:
 ``` ps1
 PS C:\Users\username> npm -v
-npm : 由于此系统上的策略禁止运行脚本，无法加载文件 C:\nvm4w\nodejs\npm.ps1。有关详细信息，请参阅 "about_Execution_Policies" (https://go.microsoft.com/fwlink/?LinkID=135170)。
-所在位置 行:1 字符:1
+npm : 因为在此系统上禁止运行脚本。有关详细信息，请参阅 https:/go.microsoft.com/fwlink/?LinkID=135170 中的 about_Execution_Policies。
+所在位置 行:1 字符: 1
 + npm -v
 + ~~~
-    + CategoryInfo          : 安全错误: (:) []，PSSecurityException
+    + CategoryInfo          : SecurityError: (:) []，PSSecurityException
     + FullyQualifiedErrorId : UnauthorizedAccess
 ```
 
@@ -75,4 +75,5 @@ PS C:\Users\username> npm -v
 `powershell` 执行以下命令即可撤销之前的命令:
 ``` ps1
 Set-ExecutionPolicy Undefined -Scope CurrentUser
+
 ```
