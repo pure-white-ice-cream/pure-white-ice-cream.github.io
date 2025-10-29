@@ -32,6 +32,7 @@ sudo docker version
 ```
 
 ## 二、测试是否可用(不安全, 生产环境建议跳过此测试直接看三)
+- 这部分的官方文档: `https://docs.docker.com/engine/daemon/remote-access`
 
 ### 防火墙开放端口 `:2375`
 
