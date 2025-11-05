@@ -43,33 +43,59 @@ services:
 
 ## 定期更新订阅脚本
 ``` shell
-# 输出当前时间
-date -R
+#!/bin/bash
 
-{
-  # 配置端口和面板位置
-  echo "mixed-port: 7890"
-  echo "external-ui: /root/.config/mihomo/ui"
-  
-  # 执行curl请求并检查是否成功
-  response=$(curl -s -w "%{http_code}" -o /tmp/curl_output "http://127.0.0.1:25500/sub?target=clash&url=这里写你的订阅连接, 转换成https://www.urlencoder.org/中的格式")
-  
-  # 如果请求失败，退出并报错
-  if [[ "$response" -ne 200 ]]; then
-    echo "Error: Request failed with status code $response"
-    exit 1
-  fi
+# 这里写你的订阅连接, 转换成https://www.urlencoder.org/中的格式
+url=""
 
-  # 如果请求成功，继续处理数据, 这里截断了前三行, 根据自己订阅结果写规则
-  awk 'NR>=3' /tmp/curl_output
-} > /opt/mihomo/config.yaml
+function end {
+  log+="\n"
+  printf "%b" "$log" >> $LOG_FILE
+  exit 0
+}
 
-# 让核心重载订阅文件
-curl -X PUT "http://127.0.0.1:9090/configs?force=true" \
-     -H "Content-Type: application/json" \
-     -d '{"path":"","payload":""}'
+CONFIG_DIR="/opt/mihomo"
+CONFIG_FILE="$CONFIG_DIR/config.yaml"
+LOG_FILE="$CONFIG_DIR/log.txt"
 
-echo "订阅更新成功"
+output=""     # 保存生成的 config 内容
+log=""        # 保存日志内容
+
+output+="mixed-port: 7890\n"
+output+="external-ui: /root/.config/mihomo/ui\n"
+
+# 订阅文件更新
+log+="[$(date -R)] \n\t订阅文件更新...\n\t"
+sub_response=$(curl -s --max-time 15 -w "%{http_code}" -o /tmp/mihomo_temp.yml "http://127.0.0.1:25500/sub?target=clash&url=$url")
+sub_exit_code=$?
+
+if [ "$sub_exit_code" -ne 0 ]; then
+  log+="Error❌️: 网络错误，退出码: $sub_exit_code\n\t"
+  end
+elif [ "$sub_response" -ne 200 ]; then
+  log+="Error❌️: 订阅文件更新失败，响应码: $sub_response\n\t"
+  end
+fi
+
+output+="$(awk 'NR>=3' /tmp/mihomo_temp.yml)""\n"
+printf "%b" "$output" > $CONFIG_FILE
+log+="订阅文件更新成功 ✅\n\t"
+
+# 配置重新加载
+log+="配置重新加载...\n\t"
+reload_response=$(curl -s --max-time 15 -w "%{http_code}" -X PUT "http://127.0.0.1:9090/configs?force=true" -H "Content-Type: application/json" -d '{"path":"","payload":""}')
+reload_exit_code=$?
+
+if [ "$reload_exit_code" -ne 0 ]; then
+  log+="Error❌️: 网络错误，退出码: $reload_exit_code\n\t"
+  end
+elif [ "$reload_response" -ne 204 ]; then
+  log+="Error❌️: 配置重新加载失败，响应码: $reload_response\n\t"
+  end
+fi
+
+log+="配置重新加载完成 ✅\n\t"
+end
 ```
 
 ## 将脚本加入定时服务
