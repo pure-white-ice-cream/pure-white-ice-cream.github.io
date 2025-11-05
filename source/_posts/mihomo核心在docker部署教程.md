@@ -103,5 +103,5 @@ end
 ``` shell
 # 参考写法, 文件路径改成自己脚本的路径
 # m h  dom mon dow   command
-5 * * * * bash /opt/mihomo/sub.sh >> /opt/mihomo/log.txt
+5 * * * * bash /opt/mihomo/sub.sh
 ```
