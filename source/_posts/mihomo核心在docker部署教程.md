@@ -9,7 +9,28 @@ date: 2025/11/04 12:00:00
 - 常用客户端里, 缺少 `linux` 服务器的 `docker` 部署的使用方案
 - 本篇教程在 `ubuntu` 下的 `docker` 环境下实现 `mihomo` 核心代理和自动订阅更新
 
-## docker compose
+## 项目地址
+`https://github.com/pure-white-ice-cream/mihomo-sub`
+
+## 快速部署
+``` yml
+services:
+  mihomo:
+    image: purewhiteicecream/mihomo-sub:latest
+    container_name: mihomo-sub
+    volumes:
+      - /opt/mihomo-sub:/root/.config/mihomo
+    environment:
+      - "TZ=Asia/Shanghai"
+      - "sub_url=https://这里换成你的订阅地址"
+    ports:
+     - "7890:7890"
+     - "9090:9090"
+```
+
+## 分步解决, 原理同上面的项目
+
+### docker compose
 ``` yml
 services:
   # mihomo 核心
@@ -37,11 +58,11 @@ services:
      - "25500:25500"
 ```
 
-## WEB 面板
+### WEB 面板
 - 下载最新面板: `https://github.com/MetaCubeX/metacubexd/releases`
 - 将下载到的文件解压复制到 `/root/.config/mihomo/ui` 路径下, 保证存在 `/root/.config/mihomo/ui/index.html` 文件
 
-## 定期更新订阅脚本
+### 定期更新订阅脚本
 ``` shell
 #!/bin/bash
 
@@ -98,7 +119,7 @@ log+="配置重新加载完成 ✅\n\t"
 end
 ```
 
-## 将脚本加入定时服务
+### 将脚本加入定时服务
 - 编辑定时任务: `crontab -e`
 ``` shell
 # 参考写法, 文件路径改成自己脚本的路径
