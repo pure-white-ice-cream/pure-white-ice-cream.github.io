@@ -41,7 +41,7 @@ jobs:
 
       # 4. 安装项目依赖
       - name: Install Dependencies
-        run: pnpm install --frozen-lockfile # 使用 frozen-lockfile 确保测试/生产环境依赖一致
+        run: pnpm install
 
       # 5. 执行构建任务
       - name: Build
