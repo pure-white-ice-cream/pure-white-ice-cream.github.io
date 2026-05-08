@@ -1,59 +1,70 @@
 name: Pages
 
+# 触发条件：当代码推送到 master 分支时执行
 on:
   push:
     branches:
-      - master # default branch
+      - master # 你的默认分支名
+
+# 设置 GITHUB_TOKEN 的权限，确保有权限发布到 GitHub Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 限制同一时间只有一个部署任务在运行，避免冲突
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      # 1. 拉取仓库代码
+      - name: Checkout
+        uses: actions/checkout@v4
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          # If your repository depends on submodule, please see: https://github.com/actions/checkout
-          submodules: recursive
-      - name: Use Node.js latest
-        uses: actions/setup-node@v4
-        with:
-          # Examples: 20, 18.19, >=16.20.2, lts/Iron, lts/Hydrogen, *, latest, current, node
-          # Ref: https://github.com/actions/setup-node#supported-version-syntax
-          node-version: "latest"
-      - name: Cache pnpm
-        uses: actions/cache@v4
-        with:
-          path: ~/.npm
-          key: ${{ runner.OS }}-pnpm-${{ hashFiles('**/package.json') }}
-          restore-keys: |
-            ${{ runner.OS }}-pnpm-
-      - name: Cache pnpm dependencies
-        uses: actions/cache@v4
-        with:
-          path: ~/.pnpm-store
-          key: ${{ runner.OS }}-pnpm-store-${{ hashFiles('**/package.json') }}
-          restore-keys: |
-            ${{ runner.OS }}-pnpm-store-
+          submodules: recursive # 如果你有子模块，这会递归拉取
+          fetch-depth: 0        # 拉取完整历史，对某些静态生成器（如获取最后修改时间）很有用
+
+      # 2. 安装 pnpm (需要在 setup-node 之前，以便 setup-node 能够识别并配置缓存)
       - name: Install pnpm
         run: npm install -g pnpm
+
+      # 3. 设置 Node.js 环境
+      - name: Use Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"    # 使用最新的 LTS 版本 24
+          cache: 'pnpm'         # 开启 setup-node 内置的 pnpm 缓存支持，无需手动配置 actions/cache
+
+      # 4. 安装项目依赖
       - name: Install Dependencies
-        run: pnpm install
+        run: pnpm install --frozen-lockfile # 使用 frozen-lockfile 确保测试/生产环境依赖一致
+
+      # 5. 执行构建任务
       - name: Build
         run: pnpm run build
+
+      # 6. 上传构建后的静态文件 (通常是 public 或 dist 目录)
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: ./public
+          path: ./public # 请确认你的静态文件生成目录是 public 还是 dist
+
   deploy:
+    # 部署任务依赖于构建任务
     needs: build
-    permissions:
-      pages: write
-      id-token: write
+    
+    # 指定部署环境
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
+      
     runs-on: ubuntu-latest
     steps:
+      # 7. 部署到 GitHub Pages 服务器
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
