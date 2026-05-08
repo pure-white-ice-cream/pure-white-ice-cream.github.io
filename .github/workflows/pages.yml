@@ -37,7 +37,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "24"    # 使用最新的 LTS 版本 24
-          cache: 'pnpm'         # 开启 setup-node 内置的 pnpm 缓存支持，无需手动配置 actions/cache
+          # cache: 'pnpm'         # 开启 setup-node 内置的 pnpm 缓存支持，无需手动配置 actions/cache
 
       # 4. 安装项目依赖
       - name: Install Dependencies
