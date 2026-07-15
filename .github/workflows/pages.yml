@@ -1,74 +1,70 @@
-name: Pages
+name: GitHub Pages
 
-# 触发条件：当代码推送到 master 分支时执行
 on:
   push:
     branches:
-      - master # 你的默认分支名
+      - master
+      - main
+  workflow_dispatch: {}
 
-# 设置 GITHUB_TOKEN 的权限，确保有权限发布到 GitHub Pages
 permissions:
   contents: read
   pages: write
   id-token: write
 
-# 限制同一时间只有一个部署任务在运行，避免冲突
 concurrency:
-  group: "pages"
-  cancel-in-progress: false
+  group: pages-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      # 1. 拉取仓库代码
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          submodules: recursive # 如果你有子模块，这会递归拉取
-          fetch-depth: 0        # 拉取完整历史，对某些静态生成器（如获取最后修改时间）很有用
+          submodules: recursive
+          fetch-depth: 0
 
-      # 2. 安装 pnpm (需要在 setup-node 之前，以便 setup-node 能够识别并配置缓存)
-      - name: Install pnpm
-        run: npm install -g pnpm
-
-      # 3. 设置 Node.js 环境
-      - name: Use Node.js 24
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "24"    # 使用最新的 LTS 版本 24
-          # cache: 'pnpm'         # 开启 setup-node 内置的 pnpm 缓存支持，无需手动配置 actions/cache
+          node-version: '20'
+          cache: 'pnpm'
 
-      # 4. 安装项目依赖
-      - name: Approve pnpm build scripts (CI)
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: 8
+
+      - name: Show environment
         run: |
-          yes | pnpm approve-builds
+          node -v
+          pnpm -v
+          npm -v
 
-      - name: Install Dependencies
-        run: pnpm install
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        env:
+          CI: true
 
-      # 5. 执行构建任务
       - name: Build
         run: pnpm run build
+        env:
+          NODE_ENV: production
 
-      # 6. 上传构建后的静态文件 (通常是 public 或 dist 目录)
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: ./public # 请确认你的静态文件生成目录是 public 还是 dist
+          path: ./public
 
   deploy:
-    # 部署任务依赖于构建任务
     needs: build
-    
-    # 指定部署环境
+    runs-on: ubuntu-latest
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-      
-    runs-on: ubuntu-latest
     steps:
-      # 7. 部署到 GitHub Pages 服务器
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
