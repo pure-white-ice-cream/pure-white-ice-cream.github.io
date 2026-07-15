@@ -40,8 +40,12 @@ jobs:
           # cache: 'pnpm'         # 开启 setup-node 内置的 pnpm 缓存支持，无需手动配置 actions/cache
 
       # 4. 安装项目依赖
+      - name: Approve pnpm build scripts (CI)
+        run: |
+          yes | pnpm approve-builds
+
       - name: Install Dependencies
-        run: pnpm install --allow-scripts
+        run: pnpm install
 
       # 5. 执行构建任务
       - name: Build
